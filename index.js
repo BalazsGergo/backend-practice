@@ -5,6 +5,9 @@ const fs = require("fs")
 const app = express();
 const port = 3001;
 
+/* middleware ami parseolja  a jsont => ehhez be kell allitani */
+app.use(express.json())
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '/frontend/index.html'));
 });
@@ -68,6 +71,12 @@ app.get('/users/:userid', (req, res) => {
     })
   }
 });
+
+app.post('/users/new-user',(req,res)=> {
+  console.dir(req.body)
+
+  res.send('ok')
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
