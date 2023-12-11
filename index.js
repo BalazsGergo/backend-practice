@@ -57,7 +57,7 @@ app.get('/users/:userid', (req, res) => {
       if (err) {
         console.log('error at reading file: ', err)
 
-        res.status(500).send('error at reading file')
+        res.status(500).json('error at reading file')
       } else { /* ha nincs hiba, akkor van data */
         console.log(`reading file was successful, searching for user id: ${userId}`)
 
@@ -70,12 +70,12 @@ app.get('/users/:userid', (req, res) => {
         if (foundUser) { /* TRUTHY értéket keresek pl. object { id: 2, name: 'John Doe' } */
           console.log(`found user id: ${userId}, data: ${foundUser}`)
 
-          res.status(200).send(foundUser)
+          res.status(200).json(foundUser)
         } else { /* FALSY értéke van pl. undefined */
           console.log(`user id: ${userId} was not found`)
 
           /* ha a find undefined-dal tér vissza, akkor nincs adott ID a users-ben */
-          res.status(404).send(`user id: ${userId} was not found`)
+          res.status(404).json(`user id: ${userId} was not found`)
         }
       }
     })
@@ -83,12 +83,52 @@ app.get('/users/:userid', (req, res) => {
 })
 
 app.post('/users/new-user', (req, res) => {
-  console.dir(req.body)
+  /* a beérkezett adat a request body-jában található, tehát req.body === beérkezett adat */
+  const newUserData = req.body
 
-  res.json('ok')
+  /* beolvasom a jelenlegi users json-ömet */
+  fs.readFile(path.join(__dirname, '/data/users.json'), 'utf8', (err, data) => {
+    /* hibakezelés */
+    if (err) {
+      console.log('error at reading file: ', err)
+
+      res.status(500).json('error at reading file')
+    } else {
+      /* átalakítom a beolvasott stringet json-né */
+      const users = JSON.parse(data) // users === array !!!
+
+      /* létrehozom az új user objektumot */
+      const newUser = {
+        id: users[users.length - 1].id + 1,
+        name: newUserData.name
+      }
+
+      /* kibővítem a users array-em */
+      users.push(newUser)
+
+      /* kiírom a fájlba a kibővített users array-t */
+      fs.writeFile(path.join(__dirname, '/data/users.json'), JSON.stringify(users, null, 2), (err) => {
+        if (err) {
+          console.log(`error at writing file: ${err}`)
+    
+          res.json(`error at writing file: ${err}`)
+        } else {
+          /* ez az a pont, amikor tudom, hogy sikeres volt minden lépés */
+          console.log(`successfully updated users with: ${JSON.stringify(newUser)}`)
+    
+          res.status(201).json(newUser)
+        }
+      })
+    }
+  })
 })
 
 /* elkezdi figyelni az adott portot a számítógépen (localhost vagy 127.0.0.1) */
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
+
+
+
+
+

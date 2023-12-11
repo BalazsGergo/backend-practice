@@ -1,70 +1,65 @@
-console.log('loaded')
-
 const rootElement = document.querySelector("#root")
+let usersData = []
 
 const formComponent = () => `
   <form>
     <input type="text" name="name" placeholder="enter name">
-    <input type="password" name="password" placeholder="enter password">
+    <input type="password" name="password" placeholder="enter password" required>
+
     <button>send</button>
   </form>
 `
 
-
-const formElement = document.querySelector('form')
-formElement.addEventListener('submit', (event) => {
-  event.preventDefault()
-
-  const userName = document.querySelector(`input[name="name"]`).value
-  const userPassword = document.querySelector(`input[name="password"]`).value
-
-  fetch('/users/new-user', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: userName,
-      password: userPassword
-    })
-  })
-    .then(res => res.json())
-    .then(resJson => console.log(resJson))
-})
-
-const userCardComponent = () => {
-  `
-  <div>
-    <h3>`${userdata.id}`</h3>
+const userCardComponent = (userData) => `
+  <div class="card">
+    <h3>${userData.id}</h3>
+    <h2>${userData.name}</h2>
   </div>
-  `
-}
-
+`
 
 const init = () => {
-  
+  rootElement.insertAdjacentHTML("beforeend", formComponent())
+
   const formElement = document.querySelector('form')
-formElement.addEventListener('submit', (event) => {
-  event.preventDefault()
+  formElement.addEventListener('submit', (event) => {
+    event.preventDefault()
 
-  const userName = document.querySelector(`input[name="name"]`).value
-  const userPassword = document.querySelector(`input[name="password"]`).value
+    const userName = document.querySelector(`input[name="name"]`).value
+    const userPassword = document.querySelector(`input[name="password"]`).value
 
-  fetch('/users/new-user', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: userName,
-      password: userPassword
+    fetch('/users/new-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: userName,
+        password: userPassword
+      })
     })
+      .then(res => {
+        if (res.status === 201) return res.json()
+        else throw Error('error at reading file')
+      })
+      .then(newUser => {
+          usersData.push(userCardComponent(newUser))
+          console.log(usersData)
+
+          rootElement.insertAdjacentHTML('beforeend', usersData[usersData.length - 1])
+        }
+      )
+      .catch(err => console.log(err))
+
   })
+
+  fetch('/users')
     .then(res => res.json())
-    .then(resJson => console.log(resJson))
-})
+    .then(data => {
+      usersData = data.map(user => userCardComponent(user))
+      console.log(usersData)
 
-
-} 
+      rootElement.insertAdjacentHTML("beforeend", usersData.join(""))
+    })
+}
 
 init()
