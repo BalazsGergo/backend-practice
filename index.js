@@ -1,4 +1,5 @@
 /* IMPORTS */
+/* IMPORTS */
 const express = require('express')
 const path = require('path')
 const fs = require('fs')
@@ -99,7 +100,7 @@ app.post('/users/new-user', (req, res) => {
 
       /* létrehozom az új user objektumot */
       const newUser = {
-        id: users[users.length - 1].id + 1,
+        id: users.length > 0 ? users[users.length - 1].id + 1 : 1,
         name: newUserData.name
       }
 
@@ -114,44 +115,56 @@ app.post('/users/new-user', (req, res) => {
           res.json(`error at writing file: ${err}`)
         } else {
           /* ez az a pont, amikor tudom, hogy sikeres volt minden lépés */
-          console.log(`successfully updated users with: ${JSON.stringify(newUser)}`)
+          console.log(`successfully created user: ${JSON.stringify(newUser)}`)
     
-          res.status(201).json(newUser)
+          res.status(201).json(`created user: ${JSON.stringify(newUser)}`)
         }
       })
     }
   })
 })
 
-app.delete*'/users/delete', (req,res) => {
+app.delete('/users/delete', (req, res) => {
+  const deleteId = parseInt(req.body.id)
 
-  fs.readFile(path.join(__dirname, '/data/users.json'),utf8, (err,data) => {
+  fs.readFile(path.join(__dirname, '/data/users.json'), 'utf8', (err, data) => {
     if (err) {
-      console.log('error at reading file')
+      console.log(`error at reading file: ${err}`)
 
-      res.json(err)
-    }else {
+      res.status(500).json(err)
+    } else {
       const users = JSON.parse(data)
+      let deletedUser
+
       const newUsers = []
 
-      for (let i =0;i < users.length;i++) {
-        if (users[i].id !== req.body.id) {
+      for (let i = 0; i < users.length; i++) {
+        if (users[i].id !== deleteId) {
           newUsers.push(users[i])
-        }else {
+        } else {
           deletedUser = users[i]
         }
       }
-      console.log(newUsers)
-      if(deletedUser){
-        console.log(`deleted user: ${req.body.id}, deleted data: ${JSON.stringify(deletedUser)}`)
+
+      if (deletedUser) {
+        fs.writeFile(path.join(__dirname, '/data/users.json'), JSON.stringify(newUsers, 0, 2), (err) => {
+          if (err) {
+            console.log(`error at writing file: ${err}`)
+
+            res.status(500).json(err)
+          } else {
+            console.log(`deleted user: ${deletedUser.id}, deleted data: ${JSON.stringify(deletedUser)}`)
+            res.status(200).json(`deleted user: ${deletedUser.id}, deleted data: ${JSON.stringify(deletedUser)}`)
+          }
+        })
+
       } else {
-        console.log('deleted user : not found')
+        console.log(`user: ${deleteId} not found`)
+        res.status(404).json(`user: ${deleteId} not found`)
       }
     }
   })
-
-  res.json('ok')
-}
+})
 
 /* elkezdi figyelni az adott portot a számítógépen (localhost vagy 127.0.0.1) */
 app.listen(port, () => {
